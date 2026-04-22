@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fuel Reach - Fuel Delivery Service</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+
+header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    text-align: center;
+    padding: 25px 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5em;
+    font-weight: bold;
+}
+
+header p {
+    margin: 5px 0 0 0;
+    font-size: 1.1em;
+    opacity: 0.9;
+}
+
+nav {
+    background: rgba(0,0,0,0.2);
+    text-align: center;
+    padding: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    backdrop-filter: blur(10px);
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+nav a:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-2px);
+}
+
+.nav-hidden {
+    display: none !important;
+}
+
+section {
+    padding: 30px 20px;
+    max-width: 900px;
+    margin: 20px auto;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin: 15px 0;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card h2 {
+    margin-top: 0;
+    color: #1e3c72;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin: 15px 0;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-weight: 500;
+}
+
+input, select {
+    width: 100%;
+    padding: 12px;
+    margin: 5px 0;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.3s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+button {
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    margin-top: 10px;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary {
+    background: #6b7280;
+}
+
+.btn-secondary:hover {
+    box-shadow: 0 8px 16px rgba(107, 114, 128, 0.3);
+}
+
+.btn-danger {
+    background: #ef4444;
+}
+
+.btn-danger:hover {
+    box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 6px;
+    margin: 10px 0;
+    display: none;
+    animation: slideIn 0.3s ease;
+}
+
+.alert.show {
+    display: block;
+}
+
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left: 4px solid #10b981;
+}
+
+.alert-error {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left: 4px solid #ef4444;
+}
+
+.alert-info {
+    background: #dbeafe;
+    color: #0c2d6b;
+    border-left: 4px solid #3b82f6;
+}
+
+#map {
+    height: 400px;
+    margin-top: 15px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.user-info {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.user-info p {
+    margin: 0;
+    font-size: 1.2em;
+}
+
+.station-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+}
+
+.station-item {
+    background: #f9fafb;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 6px;
+    border-left: 4px solid #667eea;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.station-name {
+    font-weight: 600;
+    color: #1e3c72;
+}
+
+.station-distance {
+    color: #6b7280;
+    font-size: 0.9em;
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 0.9em;
+    width: auto;
+    margin: 0;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    header h1 {
+        font-size: 2em;
+    }
+    
+    nav {
+        gap: 10px;
+    }
+}
+
+.hidden {
+    display: none;
+}
+
+ul, ol {
+    margin: 10px 0;
+}
+
+ul li, ol li {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1><i class="fas fa-gas-pump"></i> Fuel Reach</h1>
+<p>Fuel delivered anywhere, anytime</p>
+</header>
+
+<nav>
+<a href="#" onclick="showSection('home')"><i class="fas fa-home"></i> Home</a>
+<a href="#" onclick="showSection('about')"><i class="fas fa-info-circle"></i> About</a>
+<a href="#" onclick="showSection('login')" id="loginNav" class="nav-hidden"><i class="fas fa-sign-in-alt"></i> Login</a>
+<a href="#" onclick="showSection('stations')" id="stationsNav" class="nav-hidden"><i class="fas fa-gas-pump"></i> Stations</a>
+<a href="#" onclick="showLogoutConfirm()" id="logoutNav" class="nav-hidden"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</nav>
+
+<section id="home">
+<div id="userCard" class="user-info hidden">
+    <p id="userInfo"></p>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-home"></i> Welcome to Fuel Reach</h2>
+<p>Get fuel delivered to your location in minutes. Order now and never run out of fuel.</p>
+<div id="homeAlert"></div>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-map-marker-alt"></i> Your Location</h2>
+<div id="map"></div>
+<button onclick="orderFuel()" id="orderBtn" class="hidden" style="margin-top: 15px;">
+<i class="fas fa-shopping-cart"></i> Order Fuel Now
+</button>
+</div>
+</section>
+
+<section id="login" style="display:none;">
+<div class="card">
+<h2><i class="fas fa-user-plus"></i> Create Account</h2>
+<div id="regAlert"></div>
+<div class="form-group">
+<label for="regUser">Username</label>
+<input id="regUser" type="text" placeholder="Choose your username" minlength="3">
+</div>
+<div class="form-group">
+<label for="regPass">Password</label>
+<input id="regPass" type="password" placeholder="Enter a strong password" minlength="6">
+</div>
+<button onclick="register()"><i class="fas fa-check"></i> Register</button>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-sign-in-alt"></i> Login</h2>
+<div id="loginAlert"></div>
+<div class="form-group">
+<label for="logUser">Username</label>
+<input id="logUser" type="text" placeholder="Enter your username">
+</div>
+<div class="form-group">
+<label for="logPass">Password</label>
+<input id="logPass" type="password" placeholder="Enter your password">
+</div>
+<button onclick="login()"><i class="fas fa-arrow-right"></i> Login</button>
+<p style="text-align: center; color: #6b7280;">Don't have an account? Scroll up to register!</p>
+</div>
+</section>
+
+<section id="stations" style="display:none;">
+<div class="card">
+<h2><i class="fas fa-gas-pump"></i> Nearby Fuel Stations</h2>
+<p>Tap on a station to view details and order fuel</p>
+<ul class="station-list" id="stationsList"></ul>
+</div>
+</section>
+
+<section id="about" style="display:none;">
+<div class="card">
+<h2><i class="fas fa-info-circle"></i> About the Project</h2>
+<p>Fuel Reach is a mobile application designed to deliver fuel to users anytime and anywhere. It helps people in emergency situations when they run out of fuel.</p>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-exclamation-triangle"></i> Problem Statement</h2>
+<p>Many people face issues when their vehicle runs out of fuel in remote areas or during emergencies. Finding a nearby fuel station is not always possible, especially during night hours or in unfamiliar locations.</p>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-lightbulb"></i> Our Solution</h2>
+<p>The Fuel Reach app allows users to order fuel directly to their location using their smartphone. It ensures quick and safe fuel delivery with real-time tracking and professional drivers.</p>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-star"></i> Key Features</h2>
+<ul style="list-style-position: inside; color: #666;">
+<li><i class="fas fa-map"></i> Live location tracking</li>
+<li><i class="fas fa-car"></i> Fuel booking (Petrol/Diesel)</li>
+<li><i class="fas fa-credit-card"></i> Online payment options</li>
+<li><i class="fas fa-bell"></i> Real-time notifications</li>
+<li><i class="fas fa-clipboard-list"></i> Order tracking</li>
+</ul>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-cogs"></i> How It Works</h2>
+<ol style="list-style-position: inside; color: #666;">
+<li>User opens the app and logs in</li>
+<li>Selects fuel type and quantity (Petrol/Diesel)</li>
+<li>Shares current location</li>
+<li>Makes payment through preferred method</li>
+<li>Delivery agent delivers fuel to your location</li>
+</ol>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-code"></i> Technology Used</h2>
+<ul style="list-style-position: inside; color: #666;">
+<li><strong>Frontend:</strong> HTML5, CSS3, JavaScript</li>
+<li><strong>Mapping:</strong> Leaflet.js & OpenStreetMap</li>
+<li><strong>Storage:</strong> Local Storage (Client-side)</li>
+<li><strong>APIs:</strong> Geolocation API</li>
+</ul>
+</div>
+
+<div class="card">
+<h2><i class="fas fa-users"></i> Team Members</h2>
+<p>Meet the talented team behind Fuel Reach:</p>
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+<div style="background: #f3f4f6; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; text-align: center;">
+<i class="fas fa-user-circle" style="font-size: 2em; color: #667eea; margin-bottom: 8px; display: block;"></i>
+<strong>ARKESH A</strong>
+</div>
+<div style="background: #f3f4f6; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; text-align: center;">
+<i class="fas fa-user-circle" style="font-size: 2em; color: #667eea; margin-bottom: 8px; display: block;"></i>
+<strong>ARYANANDHA E P</strong>
+</div>
+<div style="background: #f3f4f6; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; text-align: center;">
+<i class="fas fa-user-circle" style="font-size: 2em; color: #667eea; margin-bottom: 8px; display: block;"></i>
+<strong>ASMI KAMARUDHEEN</strong>
+</div>
+<div style="background: #f3f4f6; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; text-align: center;">
+<i class="fas fa-user-circle" style="font-size: 2em; color: #667eea; margin-bottom: 8px; display: block;"></i>
+<strong>ATHUL KRISHNA T B</strong>
+</div>
+<div style="background: #f3f4f6; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; text-align: center;">
+<i class="fas fa-user-circle" style="font-size: 2em; color: #667eea; margin-bottom: 8px; display: block;"></i>
+<strong>ATHULYA K R</strong>
+</div>
+<div style="background: #f3f4f6; padding: 15px; border-radius: 6px; border-left: 4px solid #667eea; text-align: center;">
+<i class="fas fa-user-circle" style="font-size: 2em; color: #667eea; margin-bottom: 8px; display: block;"></i>
+<strong>BINIYA ROSE</strong>
+</div>
+</div>
+</div>
+</section>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+// ==================== UTILITIES ====================
+
+// Simple hash function for passwords (frontend only)
+function simpleHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16);
+}
+
+// Show alert messages
+function showAlert(elementId, message, type = 'success') {
+    const alertEl = document.getElementById(elementId);
+    alertEl.className = `alert ${type === 'error' ? 'alert-error' : type === 'info' ? 'alert-info' : 'alert-success'} show`;
+    alertEl.textContent = message;
+    setTimeout(() => alertEl.classList.remove('show'), 5000);
+}
+
+// ==================== NAVIGATION ====================
+
+function showSection(section) {
+    document.getElementById("home").style.display = "none";
+    document.getElementById("login").style.display = "none";
+    document.getElementById("stations").style.display = "none";
+    document.getElementById("about").style.display = "none";
+    document.getElementById(section).style.display = "block";
+}
+
+function updateNavigation() {
+    const loggedIn = !!localStorage.getItem("loggedInUser");
+    
+    document.getElementById("loginNav").classList.toggle("nav-hidden", loggedIn);
+    document.getElementById("stationsNav").classList.toggle("nav-hidden", !loggedIn);
+    document.getElementById("logoutNav").classList.toggle("nav-hidden", !loggedIn);
+    
+    document.getElementById("userCard").classList.toggle("hidden", !loggedIn);
+    document.getElementById("orderBtn").classList.toggle("hidden", !loggedIn);
+}
+
+// ==================== AUTHENTICATION ====================
+
+function validateUsername(user) {
+    if (!user || user.trim().length < 3) {
+        return "Username must be at least 3 characters long";
+    }
+    return null;
+}
+
+function validatePassword(pass) {
+    if (!pass || pass.length < 6) {
+        return "Password must be at least 6 characters long";
+    }
+    return null;
+}
+
+function register() {
+    const user = document.getElementById("regUser").value.trim();
+    const pass = document.getElementById("regPass").value;
+    
+    const userError = validateUsername(user);
+    if (userError) {
+        showAlert("regAlert", userError, "error");
+        return;
+    }
+    
+    const passError = validatePassword(pass);
+    if (passError) {
+        showAlert("regAlert", passError, "error");
+        return;
+    }
+    
+    if (localStorage.getItem(user)) {
+        showAlert("regAlert", "Username already exists!", "error");
+        return;
+    }
+    
+    localStorage.setItem(user, simpleHash(pass));
+    showAlert("regAlert", "✓ Registered successfully! Please login.", "success");
+    
+    document.getElementById("regUser").value = "";
+    document.getElementById("regPass").value = "";
+    
+    setTimeout(() => {
+        document.getElementById("logUser").value = user;
+        document.getElementById("logPass").focus();
+    }, 1000);
+}
+
+function login() {
+    const user = document.getElementById("logUser").value.trim();
+    const pass = document.getElementById("logPass").value;
+    
+    if (!user || !pass) {
+        showAlert("loginAlert", "Please enter username and password", "error");
+        return;
+    }
+    
+    const storedHash = localStorage.getItem(user);
+    
+    if (!storedHash) {
+        showAlert("loginAlert", "User not found. Please register first.", "error");
+        return;
+    }
+    
+    if (storedHash !== simpleHash(pass)) {
+        showAlert("loginAlert", "Invalid password!", "error");
+        return;
+    }
+    
+    localStorage.setItem("loggedInUser", user);
+    showAlert("homeAlert", `✓ Welcome back, ${user}!`, "success");
+    showUser();
+    updateNavigation();
+    showSection("home");
+    
+    document.getElementById("logUser").value = "";
+    document.getElementById("logPass").value = "";
+}
+
+function showLogoutConfirm() {
+    const user = localStorage.getItem("loggedInUser");
+    if (confirm(`Are you sure you want to logout, ${user}?`)) {
+        logout();
+    }
+}
+
+function logout() {
+    localStorage.removeItem("loggedInUser");
+    showUser();
+    updateNavigation();
+    showSection("home");
+}
+
+function showUser() {
+    const user = localStorage.getItem("loggedInUser");
+    if (user) {
+        document.getElementById("userInfo").innerHTML = `<i class="fas fa-user-circle"></i> Welcome, <strong>${user}</strong>!`;
+        document.getElementById("userCard").classList.remove("hidden");
+    } else {
+        document.getElementById("userCard").classList.add("hidden");
+    }
+}
+
+// ==================== MAP & LOCATION ====================
+
+let userLocation = null;
+let map = null;
+let userMarker = null;
+let stationMarkers = [];
+
+// Sample fuel stations near Kerala (default location)
+const nearbyStations = [
+    { id: 1, name: "Shell Fuel Station", lat: 10.0260, lon: 76.3410, distance: 0.5, type: "Shell" },
+    { id: 2, name: "BP Petrol Pump", lat: 10.0360, lon: 76.3510, distance: 1.2, type: "BP" },
+    { id: 3, name: "IOCL Fuel Center", lat: 10.0160, lon: 76.3310, distance: 1.8, type: "IOCL" },
+    { id: 4, name: "Mobil Station", lat: 10.0460, lon: 76.3600, distance: 2.1, type: "Mobil" },
+    { id: 5, name: "Bharat Petroleum", lat: 10.0060, lon: 76.3210, distance: 2.5, type: "BPCL" }
+];
+
+function initMap() {
+    map = L.map('map').setView([10.0260, 76.3410], 13);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    getLocation();
+}
+
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                userLocation = {
+                    lat: position.coords.latitude,
+                    lon: position.coords.longitude
+                };
+                updateMapWithLocation();
+                loadNearbyStations();
+            },
+            function(error) {
+                console.log("Geolocation denied, using default location");
+                userLocation = { lat: 10.0260, lon: 76.3410 };
+                updateMapWithLocation();
+                loadNearbyStations();
+            }
+        );
+    }
+}
+
+function updateMapWithLocation() {
+    if (!map || !userLocation) return;
+    
+    map.setView([userLocation.lat, userLocation.lon], 15);
+    
+    if (userMarker) {
+        map.removeLayer(userMarker);
+    }
+    
+    userMarker = L.marker([userLocation.lat, userLocation.lon], {
+        icon: L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+        })
+    }).addTo(map).bindPopup("<b>Your Location</b><br/>You are here").openPopup();
+}
+
+function loadNearbyStations() {
+    stationMarkers.forEach(marker => map.removeLayer(marker));
+    stationMarkers = [];
+    
+    const stationsList = document.getElementById("stationsList");
+    stationsList.innerHTML = "";
+    
+    nearbyStations.forEach(station => {
+        const marker = L.marker([station.lat, station.lon], {
+            icon: L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+            })
+        }).addTo(map).bindPopup(`<b>${station.name}</b><br/>${station.type}<br/>${station.distance}km away`);
+        
+        stationMarkers.push(marker);
+        
+        const listItem = document.createElement("li");
+        listItem.className = "station-item";
+        listItem.innerHTML = `
+            <div>
+                <div class="station-name"><i class="fas fa-map-pin"></i> ${station.name}</div>
+                <div class="station-distance">${station.type} • ${station.distance}km away</div>
+            </div>
+            <button class="btn-small" onclick="orderFromStation(${station.id}, '${station.name}')"><i class="fas fa-shopping-cart"></i> Order</button>
+        `;
+        stationsList.appendChild(listItem);
+    });
+}
+
+// ==================== ORDERING ====================
+
+function orderFuel() {
+    const user = localStorage.getItem("loggedInUser");
+    if (!user) {
+        alert("Please login to order");
+        return;
+    }
+    
+    alert(`✓ Order placed!\n\nFuel will be delivered to your location soon.\nDriver will contact you shortly.`);
+}
+
+function orderFromStation(stationId, stationName) {
+    const user = localStorage.getItem("loggedInUser");
+    if (!user) {
+        alert("Please login to order");
+        return;
+    }
+    
+    alert(`✓ Order confirmed!\n\nLocation: ${stationName}\nFuel will be ready for pickup/delivery shortly.`);
+}
+
+// ==================== INITIALIZATION ====================
+
+document.addEventListener('DOMContentLoaded', function() {
+    showUser();
+    updateNavigation();
+    initMap();
+});
+</script>
+
+</body>
+</html>
